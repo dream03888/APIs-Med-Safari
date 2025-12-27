@@ -2,8 +2,6 @@ const nodemon = require("nodemon");
 const { pool } = require("../initial");
 
 const reqTotransaction = async (rev, vital) => {
-  // console.log('vital', vital);
-  console.log("rev", rev);
 
   try {
     await pool.query("BEGIN");
