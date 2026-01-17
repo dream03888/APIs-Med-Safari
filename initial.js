@@ -21,11 +21,11 @@ httpServer.listen(PORT, "0.0.0.0", () => {
 });
 
 const pool = new Pool({
-  host: dotenv.parsed.PG_HOST,
-  user: dotenv.parsed.PG_USER,
-  password: dotenv.parsed.PG_PASSWORD,
-  database: dotenv.parsed.PG_DATABASE,
-  port: dotenv.parsed.PG_PORT
+  host: dotenv.parsed.PGHOST,
+  user: dotenv.parsed.PGUSER,
+  password: dotenv.parsed.PGPASSWORD,
+  database: dotenv.parsed.PGDATABASE,
+  port: dotenv.parsed.PGPORT
 });
 
 const io = require('socket.io')(httpServer, { 
