@@ -15,10 +15,9 @@ app.use(bodyParser.urlencoded({ limit: '500mb', extended: true }));
 
 const PORT = dotenv.parsed.PORT;
 
-const httpServer = http.createServer(app)
-
-httpServer.listen(PORT, () => {
-  console.log(`HTTP Server running on port ${PORT}`);
+const httpServer = http.createServer(app);
+httpServer.listen(PORT, "0.0.0.0", () => {
+  console.log(`🚀 HTTP Server running on port ${PORT}`);
 });
 
 const pool = new Pool({
