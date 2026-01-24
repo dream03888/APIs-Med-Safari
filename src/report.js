@@ -148,8 +148,224 @@ const getPoolQuery = async (queryStr, funtions) => {
 }
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+const getDataAllHistory = async (startDate , endDate) => {
+  const queryStr = `                     WITH disease AS (
+      SELECT 
+          mt.transaction_id,
+          string_agg(
+                '(' || md.disease_id || ' ) ' || md.disease_eng ,', '
+              ) AS list
+      FROM med_transaction mt
+      INNER JOIN med_disease md 
+          ON NULLIF(mt.disease_code, '')::int = md.disease_id
+      GROUP BY  mt.transaction_id
+  ),
+  Drug AS (
+      SELECT 
+          drug_transaction.transaction_id,
+          string_agg(
+              drugitems.generic_name || ' : ' || drugitems.sig || '    x' || drug_transaction.qty || ' ' || drug_transaction.units, ', '
+          ) AS list
+      FROM drug_transaction 
+      LEFT JOIN drugitems  
+          ON drug_transaction.drug_id = drugitems.drug_id
+      GROUP BY  drug_transaction.transaction_id
+  ),
+  Violence AS (
+      SELECT 
+          med_violence_transaction.emp_code,
+          string_agg('(' || drugitems.drug_id || ') ' || drugitems.generic_name, ', ') AS danger_list
+      FROM med_violence_transaction
+      LEFT JOIN drugitems 
+          ON med_violence_transaction.drug_id = drugitems.drug_id
+      LEFT JOIN med_violence_status 
+          ON med_violence_status.violence_id = NULLIF(med_violence_transaction.violence_status, '')::int
+      GROUP BY med_violence_transaction.emp_code
+  )
+  SELECT 
+      med_transaction_head.transaction_id,
+      med_transaction_head.date AS tx_date,
+      med_transaction_head.time AS tx_time,
+      CASE
+          WHEN p_name IN ('นาง','นางสาว','นส.','น.ส.') THEN 'หญิง'
+          WHEN p_name = 'นาย' THEN 'ชาย'
+          ELSE 'ไม่ระบุ'
+      END AS sex,
+      CONCAT(p_name,' ',f_name,' ',l_name) AS fullname,
+      nationality,
+      remark1,
+      COALESCE(disease.list, '') AS disease,
+      COALESCE(Drug.list, '') AS drugitems,
+      COALESCE(Violence.danger_list, '') AS violence,
+      location,
+      remark,
+      tbl_party_code.party_name,
+med_transaction_head.come
+  FROM med_transaction_head
+  LEFT JOIN tbl_user_profile 
+      ON med_transaction_head.emp_code = tbl_user_profile.emp_code
+  LEFT JOIN tbl_party_code on tbl_party_code.party_code = tbl_user_profile.party_code
+  LEFT JOIN disease 
+      ON med_transaction_head.transaction_id = disease.transaction_id
+  LEFT JOIN Drug 
+      ON med_transaction_head.transaction_id = Drug.transaction_id
+  LEFT JOIN Violence 
+      ON med_transaction_head.emp_code = Violence.emp_code 
+  WHERE date >= COALESCE(NULLIF($1, '')::timestamp, CURRENT_DATE)
+         AND date <= COALESCE(NULLIF($2, '')::timestamp, CURRENT_DATE)
+          AND med_transaction_head.type_people = '1'
+  ORDER BY tx_date ASC , tx_time ASC; `;
+  const queryValues = [startDate, endDate];
+  return await pool
+    .query(queryStr, queryValues)
+    .then(async (result) => {
+      if (result.rows && result.rows.length > 0) {
+        return {
+          status: 200,
+          msg: result.rows,
+        };
+      } else {
+        return {
+          status: 204,
+          msg: [],
+        };
+      }
+    })
+    .catch((err) => {
+      console.log("ERROR AT PG QUERY - getdataProductid");
+      console.log(err);
+      return {
+        status: 500,
+        msg: "INTERNAL ERROR",
+      };
+    });
+};
+
+
+
+
+
+
+
+
+
+
+const getDataOutAllHistory = async (startDate , endDate) => {
+  const queryStr = `                     WITH disease AS (
+      SELECT 
+          mt.transaction_id,
+          string_agg(
+                '(' || md.disease_id || ' ) ' || md.disease_eng ,', '
+              ) AS list
+      FROM med_transaction mt
+      INNER JOIN med_disease md 
+          ON NULLIF(mt.disease_code, '')::int = md.disease_id
+      GROUP BY  mt.transaction_id
+  ),
+  Drug AS (
+      SELECT 
+          drug_transaction.transaction_id,
+          string_agg(
+              drugitems.generic_name || ' : ' || drugitems.sig || '    x' || drug_transaction.qty || ' ' || drug_transaction.units, ', '
+          ) AS list
+      FROM drug_transaction 
+      LEFT JOIN drugitems  
+          ON drug_transaction.drug_id = drugitems.drug_id
+      GROUP BY  drug_transaction.transaction_id
+  ),
+  Violence AS (
+      SELECT 
+          med_violence_transaction.emp_code,
+          string_agg('(' || drugitems.drug_id || ') ' || drugitems.generic_name, ', ') AS danger_list
+      FROM med_violence_transaction
+      LEFT JOIN drugitems 
+          ON med_violence_transaction.drug_id = drugitems.drug_id
+      LEFT JOIN med_violence_status 
+          ON med_violence_status.violence_id = NULLIF(med_violence_transaction.violence_status, '')::int
+      GROUP BY med_violence_transaction.emp_code
+  )
+  SELECT 
+      med_transaction_head.transaction_id,
+      med_transaction_head.date AS tx_date,
+      med_transaction_head.time AS tx_time,
+      CASE
+          WHEN p_name IN ('นาง','นางสาว','นส.','น.ส.') THEN 'หญิง'
+          WHEN p_name = 'นาย' THEN 'ชาย'
+          ELSE 'ไม่ระบุ'
+      END AS sex,
+      CONCAT(p_name,' ',f_name,' ',l_name) AS fullname,
+      nationality,
+      remark1,
+      COALESCE(disease.list, '') AS disease,
+      COALESCE(Drug.list, '') AS drugitems,
+      COALESCE(Violence.danger_list, '') AS violence,
+      location,
+      remark,
+      tbl_party_code.party_name,
+med_transaction_head.come
+  FROM med_transaction_head
+  LEFT JOIN tbl_user_profile 
+      ON med_transaction_head.emp_code = tbl_user_profile.emp_code
+  LEFT JOIN tbl_party_code on tbl_party_code.party_code = tbl_user_profile.party_code
+  LEFT JOIN disease 
+      ON med_transaction_head.transaction_id = disease.transaction_id
+  LEFT JOIN Drug 
+      ON med_transaction_head.transaction_id = Drug.transaction_id
+  LEFT JOIN Violence 
+      ON med_transaction_head.emp_code = Violence.emp_code 
+  WHERE date >= COALESCE(NULLIF($1, '')::timestamp, CURRENT_DATE)
+         AND date <= COALESCE(NULLIF($2, '')::timestamp, CURRENT_DATE)
+          AND med_transaction_head.type_people = '2'
+  ORDER BY tx_date ASC , tx_time ASC; `;
+  const queryValues = [startDate, endDate];
+  return await pool
+    .query(queryStr, queryValues)
+    .then(async (result) => {
+      if (result.rows && result.rows.length > 0) {
+        return {
+          status: 200,
+          msg: result.rows,
+        };
+      } else {
+        return {
+          status: 204,
+          msg: [],
+        };
+      }
+    })
+    .catch((err) => {
+      console.log("ERROR AT PG QUERY - getdataProductid");
+      console.log(err);
+      return {
+        status: 500,
+        msg: "INTERNAL ERROR",
+      };
+    });
+};
+
+
+
+
+
+
+
 module.exports = { 
 report_all_data_user,
 report_salary,
-Report_format
+Report_format,
+getDataAllHistory,
+getDataOutAllHistory
 };

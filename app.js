@@ -5,7 +5,7 @@ const router = express.Router();
 const { io, pool } = require("./initial");
     const login = require("./src/login.js");
     const drug = require("./src/drug.js");
-
+    const report = require("./src/report.js");
 
 
 
@@ -103,6 +103,20 @@ socket.on("req_getDrugtype", async () => {
 socket.on("req_updatedrug", async (data) => {
   const result = await drug.update_drug(data);
   socket.emit("req_return_updatedrug", result);
+});
+
+
+//------------------report------------------------
+
+socket.on("getDataAllHistory", async (startDate, endDate) => {
+  const result = await report.getDataAllHistory(startDate, endDate);
+  socket.emit("req_getDataAllHistory", result);
+});
+
+
+socket.on("getDataOutAllHistory", async (startDate, endDate) => {
+  const result = await report.getDataOutAllHistory(startDate, endDate);
+  socket.emit("req_getDataOutAllHistory", result);
 });
 
 
